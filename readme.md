@@ -1,10 +1,10 @@
 # express-channels
 
-Gives application release channel functionality, without a separate build.
+Gives application release channel functionality, without a separate build.  Can serve different static content as well as different API routes on a per-user basis.
 
 ## What good are application release channels?
 
-Release channels can be a powerful way to get your software in the hands of select users to collect early feedback, find bugs, etc before release to the general public.
+Release channels can be a powerful way to get your software in the hands of select users to collect early feedback, find bugs, etc before release to the general public.  Can be configured to serve a different channel by default for different environments, automatically hiding in-progress features without having to hold off on code changes.
 
 ## Install
 
@@ -12,30 +12,52 @@ Release channels can be a powerful way to get your software in the hands of sele
 $ npm install express-channels
 ```
 
-## Example
+## Per-environment Channel Example
 
 ```javascript
-var exc = require('express-channels');
 var app = require('express'); 
+var expressChannels = require('express-channels');
 
-/* Set up user stuff beforehand */
+var environment = process.env.ENVIRONMENT; // 'dev', 'beta', or 'production'
 
-app.use(exc.setup({
+/* Configure express-channels with all available channels and a default */
+
+var xc = expressChannels({
   channels: ['dev', 'beta'], // List of channels available
-  defaultChannel: 'dev' // If user doesn't specify a channel, use 'dev'
-}));
+  default: environment !== 'production' ? environment : null
+});
 
-/* Define user before channel selection call */
+/* 2: Use express-channels */
+
+app.use(xc);
+
+```
+
+
+## Per-User Channel Example
+
+```javascript
+var app = require('express'); 
+var expressChannels = require('express-channels');
+
+/* 1: Configure express-channels with all available channels and a default */
+
+var xc = expressChannels({
+  channels: ['dev', 'beta'] // List of channels available
+});
+
+/* 2: Load your user object with channel preferences using Passport, etc */
 
 app.use(function (req, res, next) {
   req.user = { name: 'Sally', channel: 'dev' };
 });
 
-/* Set channel per user's preferences */
+/* 3: Set channel, as per user's preferences */
 
-app.use(exc.select(function (req) {
+app.use(xc(function (req) {
   var channelSelection;
 
+  // Check for your user and preferences
   if (req.user) {
     channelSelection = req.user.channel;
   }
@@ -48,22 +70,47 @@ app.use(exc.select(function (req) {
 
 ## API
 
-### setup(options)
+### expresschannels(options)
 
-Create a new middleware function with the defined options.
+Create a new expresschannels instance with the defined options for available channels and the default.
 
 ```javascript
-app.use(expressChannels.setup({
+require('express-channels')({
   channels: ['dev', 'beta'],
-  defaultChannel: 'dev'
-}));
+  default: 'dev',
+  cascade: true
+});
 ```
 
-#### Options:
+#### Options
 
-`channels` (Required) - `String[]` - Define the list of available channels **in least- to most-stable order**.  For example, if a user subscribes to first channel ('dev') but has no content while a later version (`beta`) is available, the later version will be used.  The opposite is not true.  If the last specified channel in the list has no content, no channel-specific content will be used.
+`channels` (Required) - `String[]` - Define the list of available channels **in preferential order of their use**.  See `cascade` setting.
 
-`defaultChannel` (Optional) - `string` - Specifies the default channel to be used for all requests unless otherwise specified.  This is useful for configuring a channel to be used by, for example, environment.  Note that this is not on a per-request basis but for all requests.
+`default` (Optional) - `String` - Default none - Specifies the default channel to be used for all requests unless otherwise specified.  This is useful for configuring a channel to be used by, for example, environment.  This is for all requests, but can be overridden on a per-user request basis.
+
+`cascade` (Optional) - `Boolean` - Default `true` - When set to true, channels will make requests to the following channels in the list.  For example, if the first channel ('dev') is selected by the user but does not serve a response, subsequent channels ('beta') will be attempted before ultimately using non channel-specific content.  Non channel-specific content will always be attempted if there is no channel-specific content.
+
+
+### router(hash, original)
+
+Optionally use one of the provided middleware/routers based upon channel preferences.
+
+```javascript
+app.use(xc.router({
+  dev: require('./user-router.dev'),
+  beta: require('./user-router.beta')
+}, require('./user-router')));
+```
+
+#### hash
+
+The hash provided maps between the channel name and the assigned router/middleware.
+
+#### original
+
+The final argument is the base, non-channel-specific router/middleware to use.
+
+
 
 
 ## License
