@@ -4,7 +4,7 @@ Gives application release channel functionality, without a separate build.  Can 
 
 ## What good are application release channels?
 
-Release channels can be a powerful way to get your software in the hands of select users to collect early feedback, find bugs, etc before release to the general public.  Can be configured to serve a different channel by default for different environments, automatically hiding in-progress features without having to hold off on code changes.
+Release channels can be a powerful way to get your software in the hands of select users to collect early feedback, find bugs, etc before release to the general public.  Can be configured to serve a different channel based on different environments, automatically hiding in-progress features without having to hold off on code changes.
 
 ## Install
 
@@ -12,7 +12,7 @@ Release channels can be a powerful way to get your software in the hands of sele
 $ npm install express-channels
 ```
 
-## Per-environment Channel Example
+## Environment-based Channel Selection Example
 
 ```javascript
 var app = require('express'); 
@@ -20,11 +20,11 @@ var expressChannels = require('express-channels');
 
 var environment = process.env.ENVIRONMENT; // 'dev', 'beta', or 'production'
 
-/* Configure express-channels with all available channels and a default */
+/* Configure express-channels with all available channels and set the active one */
 
 var xc = expressChannels({
   channels: ['dev', 'beta'], // List of channels available
-  default: environment !== 'production' ? environment : null
+  set: environment !== 'production' ? environment : null
 });
 
 /* 2: Use express-channels */
@@ -34,16 +34,26 @@ app.use(xc);
 ```
 
 
-## Per-User Channel Example
+## User-based Channel Selection Example
 
 ```javascript
 var app = require('express'); 
 var expressChannels = require('express-channels');
 
-/* 1: Configure express-channels with all available channels and a default */
+/* 1: Configure express-channels with all available channels and selection */
 
 var xc = expressChannels({
-  channels: ['dev', 'beta'] // List of channels available
+  channels: ['dev', 'beta'], // List of channels available
+  set: function (req) {
+    var channelSelection;
+
+    // Check for your user and preferences
+    if (req.user) {
+      channelSelection = req.user.channel;
+    }
+
+    return channelSelection; // If undefined, no channel-specific content will be used
+  }
 });
 
 /* 2: Load your user object with channel preferences using Passport, etc */
@@ -52,32 +62,22 @@ app.use(function (req, res, next) {
   req.user = { name: 'Sally', channel: 'dev' };
 });
 
-/* 3: Set channel, as per user's preferences */
+/* 3: Use the expressChannels middleware */
 
-app.use(xc(function (req) {
-  var channelSelection;
+app.use(xc);
 
-  // Check for your user and preferences
-  if (req.user) {
-    channelSelection = req.user.channel;
-  }
-
-  return channelSelection; // If undefined, default will be used
-}));
-
-//... Static content, endpoints, etc
 ```
 
 ## API
 
 ### expresschannels(options)
 
-Create a new expresschannels instance with the defined options for available channels and the default.
+Create a new expresschannels instance with the defined options for available channels.
 
 ```javascript
 require('express-channels')({
   channels: ['dev', 'beta'],
-  default: 'dev',
+  set: 'dev',
   cascade: true
 });
 ```
@@ -86,31 +86,41 @@ require('express-channels')({
 
 `channels` (Required) - `String[]` - Define the list of available channels **in preferential order of their use**.  See `cascade` setting.
 
-`default` (Optional) - `String` - Default none - Specifies the default channel to be used for all requests unless otherwise specified.  This is useful for configuring a channel to be used by, for example, environment.  This is for all requests, but can be overridden on a per-user request basis.
+`set` (Required) - `String` OR `Function` - If a string is used, the given channel will be used for all requests (useful for environment-based channel-switching with no option to override).  If a function is used, that function will be called with the request object and should return the name of the channel to be used (or a promise which resolves to the same).
 
-`cascade` (Optional) - `Boolean` - Default `true` - When set to true, channels will make requests to the following channels in the list.  For example, if the first channel ('dev') is selected by the user but does not serve a response, subsequent channels ('beta') will be attempted before ultimately using non channel-specific content.  Non channel-specific content will always be attempted if there is no channel-specific content.
+`cascade` (Optional) - `Boolean` - Defaults to `true` - When enabled, channels which follow the set channel in the channels list will be used when the set channel is missing or does not serve a response.  When disabled, will prevent the system from ever serving channel content from another channel than the one currently set.
+
+For example a router or stack with A and C provided: if the set channel is B and cascade is false, no channel-specific content will be used.  If cascade is true, the user's preference is still B, but because B is not available, C (coming after B in the channel list) will be used instead. 
 
 
-### router(hash, original)
+### router(original, hash, options)
 
-Optionally use one of the provided middleware/routers based upon channel preferences.
+Use ONE of the provided middleware/routers based upon channel preferences.
 
 ```javascript
-app.use(xc.router({
+app.use(xc.router(require('./user-router'), {
   dev: require('./user-router.dev'),
   beta: require('./user-router.beta')
-}, require('./user-router')));
+}));
 ```
 
-#### hash
+#### original (required)
+
+The original non-channel-specific router/middleware to use if no channel-specific content is used.
+
+#### hash (required)
 
 The hash provided maps between the channel name and the assigned router/middleware.
 
-#### original
+#### Options (optional)
 
-The final argument is the base, non-channel-specific router/middleware to use.
+`cascade` - `Boolean` - Defaults to `true` - When enabled, channels which follow the set channel in the channels list will be used when the set channel is missing or does not serve a response.  When disabled, will prevent the system from ever serving channel content from another channel than the one currently set.
 
+For example a router with A and C provided: if the set channel is B and cascade is false, no channel-specific content will be used.  If cascade is true, the user's preference is still B, but because B is not available, C (coming after B in the channel list) will be used instead. 
 
+### stack()
+
+Use ANY of the provided middleware/routers in channel order, starting with set channel.
 
 
 ## License

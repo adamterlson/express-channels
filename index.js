@@ -20,7 +20,6 @@ function expresschannels(options) {
   // option defaults
   var channels = opts.channels || [];
   var set = opts.set || function () { return opts.default; };
-  var cascade = opts.cascade == null ? true : opts.cascade;
 
   // option validation
   if (!Array.isArray(channels) || channels.length === 0) {
@@ -43,13 +42,7 @@ function expresschannels(options) {
         return next(new Error('Channel `' + channelKey + '` not found in list of channels: ' + channels));
       }
       
-      // No cascade, just use the one channel
-      // else use all channels later in the list
-      if (!cascade) {
-        req._channels = [channelKey];
-      } else {
-        req._channels = channels.slice(channels.indexOf(channelKey));
-      }
+      req._channels = channels.slice(channels.indexOf(channelKey));
 
       next();
     }, next);
@@ -65,8 +58,8 @@ function stack(hash, original) {
   }
 
   return function (req, res, next) {
-    // Get the list of available content content
-    var channelContent = req.channels
+    // Get the list of available channel content
+    var channelContent = req._channels
       .map(function (channel) {
         return hash[channel];
       });
@@ -88,7 +81,11 @@ function stack(hash, original) {
   };
 }
 
-function router(hash, original) {
+function router(original, hash, options) {
+  var opts = options || {};
+
+  opts.cascade = opts.cascade == null ? true : opts.cascade;
+
   if (!hash) {
     throw new Error('Must provide hash for channel-specific content.');
   }
@@ -108,7 +105,7 @@ function router(hash, original) {
   });
 
   // modify the URL with a new segment specific to each channel key
-  router.use(flagUrlMiddleware(hash));
+  router.use(flagUrlMiddleware(hash, opts.cascade));
 
   // register provided channel-specific content under the appropriate segments
   Object.keys(hash).forEach(function (channelKey) {
@@ -116,6 +113,8 @@ function router(hash, original) {
   });
 
   // use the original router lastly under a route so its mututally exclusive with channel content
+  // if you don't do this, registering routes /foo and /bar on the original with /baz on a channel, 
+  // being on the channel will serve /foo, /bar and /baz.  This might be unexpected behavior.
   router.use(routeFlag(''), original);
 
   // restore the URL back to the original for future handlers
@@ -128,7 +127,7 @@ function routeFlag(key) {
   return '/__' + key.toUpperCase() + '__';
 }
 
-function flagUrlMiddleware(hash) {
+function flagUrlMiddleware(hash, cascade) {
   return function (req, res, next) {
     var channelContent;
     var channelKey;
@@ -143,11 +142,15 @@ function flagUrlMiddleware(hash) {
     // IF version A is defined, channel key is undefined
     // ELSE IF version B is defined, channel key is B, etc
 
-    while (i < req.channels.length && !channelContent) {
-      channelKey = req.channels[i];
+    if (cascade) {
+      while (i < req._channels.length && !channelContent) {
+        channelKey = req._channels[i];
+        channelContent = hash[channelKey];
+      }
+    } else {
+      channelKey = req._channels[0];
       channelContent = hash[channelKey];
     }
-
     // No channels are defined on the hash that exist in the users preference
     if (!channelContent) return next();
 

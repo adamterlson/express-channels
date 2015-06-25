@@ -115,35 +115,6 @@ describe('middleware registration', function () {
         });
       });
     });
-
-    describe('without cascade setting', function () {
-      var expectations = {
-        alpha: ['alpha'],
-        bravo: ['bravo'],
-        charlie: ['charlie']
-      };
-
-      Object.keys(expectations).forEach(function (selectedChannel) {
-        it(selectedChannel + ' - should not slice the channel list: ' + expectations[selectedChannel], function (done) {
-          var app = express();
-          app.use(expressChannels({
-            channels: allChannels,
-            cascade: false,
-            set: function (req) {
-              return selectedChannel;
-            }
-          }));
-
-          app.use(function (req, res, next) {
-            res.send(req._channels);
-          });
-
-          request(app)
-            .get('/')
-            .expect(200, expectations[selectedChannel], done);
-        });
-      });
-    });
   });
 
   describe('invalid channel selection', function () {
