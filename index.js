@@ -35,14 +35,16 @@ function expresschannels(options) {
       // no channel selection
       if (!channelKey) {
         req._channels = [];
-        return;
+        return next();
       }
 
       // invalid channel selection
       if (channels.indexOf(channelKey) === -1) {
-        throw new Error('Channel `' + channelKey + '` not found in list of channels: ' + channels);
+        return next(new Error('Channel `' + channelKey + '` not found in list of channels: ' + channels));
       }
       
+      // No cascade, just use the one channel
+      // else use all channels later in the list
       if (!cascade) {
         req._channels = [channelKey];
       } else {
@@ -50,7 +52,7 @@ function expresschannels(options) {
       }
 
       next();
-    });
+    }, next);
   };
 };
 
@@ -123,7 +125,7 @@ function router(hash, original) {
 }
 
 function routeFlag(key) {
-  return '/__' + key.toUpperCase() + '__',
+  return '/__' + key.toUpperCase() + '__';
 }
 
 function flagUrlMiddleware(hash) {

@@ -21,8 +21,10 @@
   },
   "homepage": "https://github.com/adamterlson/express-channels",
   "devDependencies": {
-    "supertest": "~0.15.0",
     "mocha": "~2.1.0",
-    "should": "~4.6.1"
+    "supertest": "~0.15.0"
+  },
+  "dependencies": {
+    "express": "^4.13.0"
   }
 }
