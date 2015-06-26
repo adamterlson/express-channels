@@ -28,7 +28,12 @@ function expresschannels(options) {
 
   return function setChannelMiddleware(req, res, next) {
     // promise support
-    var selectChannel = Promise.resolve(set());
+    var selectChannel;
+    if (typeof set === 'function') {
+      selectChannel = Promise.resolve(set());
+    } else {
+      selectChannel = Promise.resolve(set);
+    }
 
     selectChannel.then(function (channelKey) {
       // no channel selection
@@ -146,13 +151,17 @@ function flagUrlMiddleware(hash, cascade) {
       while (i < req._channels.length && !channelContent) {
         channelKey = req._channels[i];
         channelContent = hash[channelKey];
+        i++;
       }
     } else {
       channelKey = req._channels[0];
       channelContent = hash[channelKey];
     }
-    // No channels are defined on the hash that exist in the users preference
-    if (!channelContent) return next();
+
+    // If there is no channel content, use the original
+    if (!channelContent) {
+      channelKey = '';
+    }
 
     req._originalUrl = url;
 
@@ -168,7 +177,7 @@ function flagUrlMiddleware(hash, cascade) {
   };
 }
 
-function _restoreUrlMiddleware(req, res, next) {
+function restoreUrlMiddleware(req, res, next) {
   if (req._originalUrl) {
     req.url = req._originalUrl;
     delete req._originalUrl;

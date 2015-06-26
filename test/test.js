@@ -5,7 +5,7 @@ var expressChannels = require('..');
 
 describe('express channels initialization', function () {
   it('should construct and return middleware', function () {
-    var middleware = expressChannels({ channels: ['dev', 'beta'] });
+    var middleware = expressChannels({ channels: ['alpha', 'bravo'] });
     assert.equal(middleware.length, 3);
   });
 
@@ -88,31 +88,29 @@ describe('middleware registration', function () {
         .expect(500, done);
     });
 
-    describe('with cascade setting', function () {
-      var expectations = {
-        alpha: ['alpha', 'bravo', 'charlie'],
-        bravo: ['bravo', 'charlie'],
-        charlie: ['charlie']
-      };
+    var expectations = {
+      alpha: ['alpha', 'bravo', 'charlie'],
+      bravo: ['bravo', 'charlie'],
+      charlie: ['charlie']
+    };
 
-      Object.keys(expectations).forEach(function (selectedChannel) {
-        it(selectedChannel + ' - should slice the channel list: ' + expectations[selectedChannel], function (done) {
-          var app = express();
-          app.use(expressChannels({
-            channels: allChannels,
-            set: function (req) {
-              return selectedChannel;
-            }
-          }));
+    Object.keys(expectations).forEach(function (selectedChannel) {
+      it(selectedChannel + ' - should slice the channel list: ' + expectations[selectedChannel], function (done) {
+        var app = express();
+        app.use(expressChannels({
+          channels: allChannels,
+          set: function (req) {
+            return selectedChannel;
+          }
+        }));
 
-          app.use(function (req, res, next) {
-            res.send(req._channels);
-          });
-
-          request(app)
-            .get('/')
-            .expect(200, expectations[selectedChannel], done);
+        app.use(function (req, res, next) {
+          res.send(req._channels);
         });
+
+        request(app)
+          .get('/')
+          .expect(200, expectations[selectedChannel], done);
       });
     });
   });
@@ -133,3 +131,158 @@ describe('middleware registration', function () {
     });
   });
 });
+
+describe('router', function () {
+  var app;
+
+  describe('construction', function () {
+    it('should throw if hash and original are not provided', function () {
+      assert.throws(function () {
+        expressChannels.router();
+      });
+    });
+
+    it('should throw if hash is not provided', function () {
+      assert.throws(function () {
+        expressChannels.router({});
+      });
+    });
+
+    it('should throw if hash is not provided', function () {
+      assert.throws(function () {
+        expressChannels.router(null, {});
+      });
+    });
+  });
+
+  describe('usage', function (done) {
+    it('should throw if you register a router before the base express channels', function () {
+      app = express();
+      app.use(expressChannels.router(makeRouter('/', 'original'), {}));
+
+      request(app)
+        .get('/')
+        .expect(500, done);
+    });
+  });
+
+  describe('mutually exclusive routes', function () {
+    before(function () {
+      app = express();
+      app.use(expressChannels({
+        channels: ['alpha', 'bravo'],
+        set: 'bravo'
+      }));
+
+      var original = makeRouter('/', 'original');
+      var alpha = makeRouter('/alpha', 'alpha');
+      var bravo = makeRouter('/bravo', 'bravo');
+
+      var xcRouter = expressChannels.router(original, {
+        alpha: alpha,
+        bravo: bravo
+      });
+
+      app.use(xcRouter);
+    });
+
+    it('should load bravo', function (done) {
+      request(app)
+        .get('/bravo')
+        .expect(200, 'bravo', done);
+    });
+
+    it('should not load root', function (done) {
+      request(app)
+        .get('/')
+        .expect(404, done);
+    }); 
+
+    it('should not load alpha', function (done) {
+      request(app)
+        .get('/alpha')
+        .expect(404, done);
+    });
+  });
+
+  describe('with cascading', function () {
+    beforeEach(function () {
+      app = express();
+      app.use(expressChannels({
+        channels: ['alpha', 'bravo', 'charlie'],
+        set: 'bravo'
+      }));
+    });
+
+    it('should use the selected channel content', function (done) {
+      var original = makeRouter('/', 'original');
+      var alpha = makeRouter('/', 'alpha');
+      var bravo = makeRouter('/', 'bravo');
+      var charlie = makeRouter('/', 'charlie');
+
+      var xcRouter = expressChannels.router(original, {
+        alpha: alpha,
+        bravo: bravo,
+        charlie: charlie
+      });
+
+      app.use(xcRouter);
+
+      request(app)
+        .get('/')
+        .expect(200, 'bravo', done);
+    });
+
+    it('should use the next channels content when the first is not available', function (done) {
+      var original = makeRouter('/', 'original');
+      var alpha = makeRouter('/', 'alpha');
+      var charlie = makeRouter('/', 'charlie');
+
+      var xcRouter = expressChannels.router(original, {
+        alpha: alpha,
+        charlie: charlie
+      });
+
+      app.use(xcRouter);
+
+      request(app)
+        .get('/')
+        .expect(200, 'charlie', done);
+    });
+  });
+
+  describe('without cascading', function () {
+    beforeEach(function () {
+      app = express();
+      app.use(expressChannels({
+        channels: ['alpha', 'bravo', 'charlie'],
+        set: 'bravo'
+      }));
+    });
+
+    it('should use the channel content', function (done) {
+      var original = makeRouter('/', 'original');
+      var alpha = makeRouter('/', 'alpha');
+      var charlie = makeRouter('/', 'charlie');
+
+      var xcRouter = expressChannels.router(original, {
+        alpha: alpha,
+        charlie: charlie
+      }, { cascade: false });
+
+      app.use(xcRouter);
+
+      request(app)
+        .get('/')
+        .expect(200, 'original', done);
+    });
+  });
+});
+
+function makeRouter(url, message) {
+  var router = express.Router();
+  router.get(url, function (req, res) {
+    res.send(message);
+  });
+  return router;
+}
