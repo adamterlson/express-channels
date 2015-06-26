@@ -13,6 +13,7 @@ var express = require('express');
 
 module.exports = expresschannels;
 module.exports.router = router;
+module.exports.stack = stack;
 
 function expresschannels(options) {
   var opts = options || {};
@@ -54,7 +55,7 @@ function expresschannels(options) {
   };
 };
 
-function stack(hash, original) {
+function stack(original, hash) {
   if (!hash) {
     throw new Error('Must provide hash for channel-specific content.');
   }
@@ -79,6 +80,12 @@ function stack(hash, original) {
       else {
         n = load.bind(null, i+1); // Load the next middleware
       }
+
+      // This particular channel wasn't provided to the stack
+      if (!channelContent[i]) {
+        return n();
+      }
+
       channelContent[i](req, res, n);
     }
 

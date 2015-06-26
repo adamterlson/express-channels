@@ -155,7 +155,7 @@ describe('router', function () {
     });
   });
 
-  describe('usage', function (done) {
+  describe('bad order usage', function (done) {
     it('should throw if you register a router before the base express channels', function () {
       app = express();
       app.use(expressChannels.router(makeRouter('/', 'original'), {}));
@@ -279,10 +279,153 @@ describe('router', function () {
   });
 });
 
+describe('stack', function () {
+  var app;
+
+  describe('construction', function () {
+    it('should throw if hash and original are not provided', function () {
+      assert.throws(function () {
+        expressChannels.stack();
+      });
+    });
+
+    it('should throw if hash is not provided', function () {
+      assert.throws(function () {
+        expressChannels.stack({});
+      });
+    });
+
+    it('should throw if hash is not provided', function () {
+      assert.throws(function () {
+        expressChannels.stack(null, {});
+      });
+    });
+
+    it('should return middleware', function () {
+      assert.equal(expressChannels.stack({}, {}).length, 3);
+    });
+
+    describe('middleware', function () {
+      it('should load selected channel when available', function (done) {
+        app = express();
+        app.use(expressChannels({
+          channels: ['alpha', 'bravo'],
+          set: 'alpha'
+        }));
+
+        var original = makeMiddleware('original');
+        var alpha = makeMiddleware('alpha');
+        var bravo = makeMiddleware('bravo');
+
+        var xcRouter = expressChannels.stack(original, {
+          alpha: alpha,
+          bravo: bravo
+        });
+
+        app.use(xcRouter);
+
+        request(app)
+          .get('/')
+          .expect(200, 'alpha', done);
+      });
+
+      it('should load next channel when first is unavailable', function (done) {
+        app = express();
+        app.use(expressChannels({
+          channels: ['alpha', 'bravo'],
+          set: 'alpha'
+        }));
+
+        var original = makeMiddleware('original');
+        var bravo = makeMiddleware('bravo');
+
+        var xcRouter = expressChannels.stack(original, {
+          bravo: bravo
+        });
+
+        app.use(xcRouter);
+
+        request(app)
+          .get('/')
+          .expect(200, 'bravo', done);
+      });
+
+      it('should load next channel when first is available, but calls next', function (done) {
+        app = express();
+        app.use(expressChannels({
+          channels: ['alpha', 'bravo'],
+          set: 'alpha'
+        }));
+
+        var original = makeMiddleware('original');
+        var alpha = function (req, res, next) { next() };
+        var bravo = makeMiddleware('bravo');
+
+        var xcRouter = expressChannels.stack(original, {
+          alpha: alpha,
+          bravo: bravo
+        });
+
+        app.use(xcRouter);
+
+        request(app)
+          .get('/')
+          .expect(200, 'bravo', done);
+      });
+
+      it('should load original if no channels return content', function (done) {
+        app = express();
+        app.use(expressChannels({
+          channels: ['alpha', 'bravo'],
+          set: 'alpha'
+        }));
+
+        var original = makeMiddleware('original');
+        var alpha = function (req, res, next) { next() };
+        var bravo = function (req, res, next) { next() };
+
+        var xcRouter = expressChannels.stack(original, {
+          alpha: alpha,
+          bravo: bravo
+        });
+
+        app.use(xcRouter);
+
+        request(app)
+          .get('/')
+          .expect(200, 'original', done);
+      });
+
+      it('should load original if no channels are defined', function (done) {
+        app = express();
+        app.use(expressChannels({
+          channels: ['alpha', 'bravo'],
+          set: 'alpha'
+        }));
+
+        var original = makeMiddleware('original');
+
+        var xcRouter = expressChannels.stack(original, {});
+
+        app.use(xcRouter);
+
+        request(app)
+          .get('/')
+          .expect(200, 'original', done);
+      });
+    });
+  });
+});
+
 function makeRouter(url, message) {
   var router = express.Router();
   router.get(url, function (req, res) {
     res.send(message);
   });
   return router;
+}
+function makeMiddleware(message) {
+  return function (req, res, next) {
+    res.send(message);
+  };
 }
