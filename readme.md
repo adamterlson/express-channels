@@ -1,6 +1,6 @@
-[![Build Status](https://travis-ci.org/adamterlson/express-channels.svg?branch=master)](https://travis-ci.org/adamterlson/express-channels)
-
 # express-channels
+
+[![Build Status](https://travis-ci.org/adamterlson/express-channels.svg?branch=master)](https://travis-ci.org/adamterlson/express-channels)
 
 Gives application release channel functionality, without a separate build.  Can serve different static content as well as different API routes on a per-user basis.
 
