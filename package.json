@@ -1,6 +1,6 @@
 {
   "name": "express-channels",
-  "version": "0.6.2",
+  "version": "0.6.3",
   "description": "Application channels in a single build via middleware",
   "main": "index.js",
   "scripts": {
