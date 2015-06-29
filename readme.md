@@ -46,8 +46,8 @@ app.use(expressChannels.router(...));
 
 ```javascript
 var express = require('express');
-var app = express(); 
 var expressChannels = require('express-channels');
+var app = express(); 
 
 /* 1: Configure express-channels with all available channels and selection */
 
@@ -61,7 +61,7 @@ var xc = expressChannels({
       channelSelection = req.user.channel;
     }
 
-    return channelSelection; // If undefined, no channel-specific content will be used
+    return; // If undefined, no channel-specific content will be used
   }
 });
 
@@ -86,13 +86,16 @@ app.use(expressChannels.router(...));
 
 ### expressChannels(options)
 
-Create a new expressChannels instance with the defined options for available channels.
+Create a new expressChannels middleware with the defined options for available channels.
 
 ```javascript
-require('express-channels')({
+var expressChannels = require('express-channels');
+var xc = expressChannels({
   channels: ['alpha', 'beta'],
   set: 'alpha'
 });
+
+app.use(xc);
 ```
 
 #### Options
@@ -107,12 +110,6 @@ require('express-channels')({
 Use ONE of the provided middleware/routers based upon channel preferences.  Helpful to fully replace the original middleware/router with channel content in a mututally-exclusive way.  That is, if the user is subscribed to channel-specific content, the original content will be unavailable.  This can be used, for example, to version a particular route.
 
 ```javascript
-var xc = expressChannels({
-  channels: ['alpha', 'beta'], // List of channels available
-  set: 'alpha'
-});
-
-app.use(xc);
 app.use(expressChannels.router(require('./user-router'), {
   alpha: require('./user-router.alpha'),
   beta: require('./user-router.beta')
@@ -138,12 +135,6 @@ For example a router with A and C provided: if the set channel is B and cascade 
 Use ANY of the provided middleware/routers in channel order, starting with set channel and progressing down the list of configured channels.  This is particularly useful for serving static content resources, allowing for channel-specific content to be available, but original assets remain accessible.
 
 ```javascript
-var xc = expressChannels({
-  channels: ['alpha', 'beta'], // List of channels available
-  set: 'alpha'
-});
-
-app.use(xc);
 app.use(expressChannels.stack({
   alpha: express.static('./static/_alpha'), // Available only to alpha subscribers
   beta: express.static('./static/_beta') // Available to alpha OR beta subscribers
