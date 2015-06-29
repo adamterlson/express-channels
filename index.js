@@ -61,6 +61,10 @@ function stack(hash) {
   }
 
   return function (req, res, next) {
+    if (!req._channels || !Array.isArray(req._channels)) {
+      return next(new Error('Must register the expressChannels middleware before using `stack`.'));
+    }
+
     // Get the list of available channel content
     var channelContent = req._channels
       .map(function (channel) {
@@ -105,7 +109,7 @@ function router(original, hash, options) {
 
   router.use(function (req, res, next) {
     if (!req._channels || !Array.isArray(req._channels)) {
-      next(new Error('Must register the expressChannels middleware before using `router`.'));
+      return next(new Error('Must register the expressChannels middleware before using `router`.'));
     }
 
     next();

@@ -183,7 +183,7 @@ describe('router', function () {
   });
 
   describe('bad order usage', function (done) {
-    it('should throw if you register a router before the base express channels', function () {
+    it('should throw if you register a router before the base express channels', function (done) {
       app = express();
       app.use(expressChannels.router(makeRouter('/', 'original'), {}));
 
@@ -432,6 +432,17 @@ describe('stack', function () {
         request(app)
           .get('/')
           .expect(200, 'original', done);
+      });
+
+      describe('bad order usage', function (done) {
+        it('should throw if you register a stack before the base express channels', function (done) {
+          app = express();
+          app.use(expressChannels.stack({}));
+
+          request(app)
+            .get('/')
+            .expect(500, done);
+        });
       });
     });
   });
