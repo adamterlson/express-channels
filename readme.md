@@ -105,7 +105,7 @@ app.use(xc);
 `set` (Required) - `String` OR `Function` - If a string is used, the given channel will be used for all requests (useful for environment-based channel-switching with no option to override).  If a function is used, that function will be called with the request object and should return the name of the channel to be used (or a promise which resolves to the same).
 
 
-### expressChannels.router(original, channelContent, options)
+### expressChannels.router(original, channelContent[, options])
 
 Use ONE of the provided middleware/routers based upon channel preferences.  Helpful to fully replace the original middleware/router with channel content in a mututally-exclusive way.  That is, if the user is subscribed to channel-specific content, the original content will be unavailable.  This can be used, for example, to version a particular route.
 
