@@ -40,7 +40,6 @@ app.listen(5000);
 
 
 /**
- * @return {Object}
  * Create original content (router)
  */
 function createOriginalContent() {
@@ -51,7 +50,6 @@ function createOriginalContent() {
 }
 
 /**
- * @return {Object}
  * Create a hash representation of the alpha and beta channel content (routers)
  */
 function createChannelContentHash() {
