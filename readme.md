@@ -107,7 +107,13 @@ require('express-channels')({
 Use ONE of the provided middleware/routers based upon channel preferences.  Helpful to fully replace the original middleware/router with channel content in a mututally-exclusive way.  That is, if the user is subscribed to channel-specific content, the original content will be unavailable.  This can be used, for example, to version a particular route.
 
 ```javascript
-app.use(xc.router(require('./user-router'), {
+var xc = expressChannels({
+  channels: ['alpha', 'beta'], // List of channels available
+  set: 'alpha'
+});
+
+app.use(xc);
+app.use(expressChannels.router(require('./user-router'), {
   alpha: require('./user-router.alpha'),
   beta: require('./user-router.beta')
 }));
@@ -137,7 +143,8 @@ var xc = expressChannels({
   set: 'alpha'
 });
 
-app.use(xc.stack({
+app.use(xc);
+app.use(expressChannels.stack({
   alpha: express.static('./static/_alpha'), // Available only to alpha subscribers
   beta: express.static('./static/_beta') // Available to alpha OR beta subscribers
 }));
