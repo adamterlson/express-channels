@@ -15,7 +15,8 @@ $ npm install express-channels
 ## Environment-based Channel Selection Example
 
 ```javascript
-var app = require('express'); 
+var express = require('express'); 
+var app = express();
 var expressChannels = require('express-channels');
 
 var environment = process.env.ENVIRONMENT; // 'alpha', 'beta', or 'production'
@@ -33,8 +34,8 @@ app.use(xc);
 
 /* 3: Register channel-specific content (see below for usage details) */
 
-app.use(xc.stack(...));
-app.use(xc.router(...));
+app.use(expressChannels.stack(...));
+app.use(expressChannels.router(...));
 
 ```
 
@@ -42,7 +43,8 @@ app.use(xc.router(...));
 ## User-based Channel Selection Example
 
 ```javascript
-var app = require('express'); 
+var express = require('express');
+var app = express(); 
 var expressChannels = require('express-channels');
 
 /* 1: Configure express-channels with all available channels and selection */
@@ -73,16 +75,16 @@ app.use(xc);
 
 /* 4: Register channel-specific content (see below for usage details) */
 
-app.use(xc.stack(...));
-app.use(xc.router(...));
+app.use(expressChannels.stack(...));
+app.use(expressChannels.router(...));
 
 ```
 
 ## API
 
-### expresschannels(options)
+### expressChannels(options)
 
-Create a new expresschannels instance with the defined options for available channels.
+Create a new expressChannels instance with the defined options for available channels.
 
 ```javascript
 require('express-channels')({
@@ -98,7 +100,7 @@ require('express-channels')({
 `set` (Required) - `String` OR `Function` - If a string is used, the given channel will be used for all requests (useful for environment-based channel-switching with no option to override).  If a function is used, that function will be called with the request object and should return the name of the channel to be used (or a promise which resolves to the same).
 
 
-### router(original, channelContent, options)
+### expressChannels.router(original, channelContent, options)
 
 Use ONE of the provided middleware/routers based upon channel preferences.  Helpful to fully replace the original middleware/router with channel content in a mututally-exclusive way.  That is, if the user is subscribed to channel-specific content, the original content will be unavailable.  This can be used, for example, to version a particular route.
 
@@ -123,7 +125,7 @@ The channel content hash where the keys are channel names and the values are any
 
 For example a router with A and C provided: if the set channel is B and cascade is false, no channel-specific content will be used.  If cascade is true, the user's preference is still B, but because B is not available, C (coming after B in the channel list) will be used instead. 
 
-### stack(channelConent)
+### expressChannels.stack(channelConent)
 
 Use ANY of the provided middleware/routers in channel order, starting with set channel and progressing down the list of configured channels.  This is particularly useful for serving static content resources, allowing for channel-specific content to be available, but original assets remain accessible.
 

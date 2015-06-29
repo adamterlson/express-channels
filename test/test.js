@@ -3,10 +3,12 @@ var express = require('express');
 var request = require('supertest');
 var expressChannels = require('..');
 
-describe('express channels initialization', function () {
-  it('should construct and return middleware', function () {
+describe('express channels', function () {
+  it('should be a constructor that returns middleware and have router and stack defined', function () {
     var middleware = expressChannels({ channels: ['alpha', 'bravo'] });
     assert.equal(middleware.length, 3);
+    assert.equal(typeof expressChannels.router, 'function');
+    assert.equal(typeof expressChannels.stack, 'function');
   });
 
   describe('negative cases', function () {
@@ -30,6 +32,31 @@ describe('express channels initialization', function () {
 
 describe('middleware registration', function () {
   var allChannels = ['alpha', 'bravo', 'charlie'];
+
+  it('should pass the request object into set', function (done) {
+    var selectedChannel = 'alpha';
+    var app = express();
+    app.use(function (req, res, next) {
+      req.test = true;
+      next();
+    });
+    app.use(expressChannels({
+      channels: allChannels,
+      set: function (req) {
+        assert(req.test);
+
+        return selectedChannel;
+      }
+    }));
+
+    app.use(function (req, res, next) {
+      res.send(req._channels);
+    });
+
+    request(app)
+      .get('/')
+      .expect(200, ['alpha', 'bravo', 'charlie'], done);
+  });
 
   describe('promise support', function () {
     it('should use resolved promise as selected channel', function (done) {

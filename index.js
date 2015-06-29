@@ -31,7 +31,7 @@ function expresschannels(options) {
     // promise support
     var selectChannel;
     if (typeof set === 'function') {
-      selectChannel = Promise.resolve(set());
+      selectChannel = Promise.resolve(set(req));
     } else {
       selectChannel = Promise.resolve(set);
     }
