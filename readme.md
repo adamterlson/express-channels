@@ -140,7 +140,8 @@ app.use(xc.stack({
   beta: express.static('./static/_beta') // Available to alpha OR beta subscribers
 }));
 app.use(express.static('./static')); // Available to everyone
-```
+``` 
+
 
 ####channelContent
 
