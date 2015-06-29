@@ -283,26 +283,14 @@ describe('stack', function () {
   var app;
 
   describe('construction', function () {
-    it('should throw if hash and original are not provided', function () {
+    it('should throw if hash is not provided', function () {
       assert.throws(function () {
         expressChannels.stack();
       });
     });
 
-    it('should throw if hash is not provided', function () {
-      assert.throws(function () {
-        expressChannels.stack({});
-      });
-    });
-
-    it('should throw if hash is not provided', function () {
-      assert.throws(function () {
-        expressChannels.stack(null, {});
-      });
-    });
-
     it('should return middleware', function () {
-      assert.equal(expressChannels.stack({}, {}).length, 3);
+      assert.equal(expressChannels.stack({}).length, 3);
     });
 
     describe('middleware', function () {
@@ -317,12 +305,13 @@ describe('stack', function () {
         var alpha = makeMiddleware('alpha');
         var bravo = makeMiddleware('bravo');
 
-        var xcRouter = expressChannels.stack(original, {
+        var xcRouter = expressChannels.stack({
           alpha: alpha,
           bravo: bravo
         });
 
         app.use(xcRouter);
+        app.use(original);
 
         request(app)
           .get('/')
@@ -339,11 +328,12 @@ describe('stack', function () {
         var original = makeMiddleware('original');
         var bravo = makeMiddleware('bravo');
 
-        var xcRouter = expressChannels.stack(original, {
+        var xcRouter = expressChannels.stack({
           bravo: bravo
         });
 
         app.use(xcRouter);
+        app.use(original);
 
         request(app)
           .get('/')
@@ -361,12 +351,13 @@ describe('stack', function () {
         var alpha = function (req, res, next) { next() };
         var bravo = makeMiddleware('bravo');
 
-        var xcRouter = expressChannels.stack(original, {
+        var xcRouter = expressChannels.stack({
           alpha: alpha,
           bravo: bravo
         });
 
         app.use(xcRouter);
+        app.use(original);
 
         request(app)
           .get('/')
@@ -384,12 +375,13 @@ describe('stack', function () {
         var alpha = function (req, res, next) { next() };
         var bravo = function (req, res, next) { next() };
 
-        var xcRouter = expressChannels.stack(original, {
+        var xcRouter = expressChannels.stack({
           alpha: alpha,
           bravo: bravo
         });
 
         app.use(xcRouter);
+        app.use(original);
 
         request(app)
           .get('/')
@@ -405,9 +397,10 @@ describe('stack', function () {
 
         var original = makeMiddleware('original');
 
-        var xcRouter = expressChannels.stack(original, {});
+        var xcRouter = expressChannels.stack({});
 
         app.use(xcRouter);
+        app.use(original);
 
         request(app)
           .get('/')

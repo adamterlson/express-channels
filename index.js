@@ -55,12 +55,9 @@ function expresschannels(options) {
   };
 };
 
-function stack(original, hash) {
+function stack(hash) {
   if (!hash) {
     throw new Error('Must provide hash for channel-specific content.');
-  }
-  if (!original) {
-    throw new Error('Must provide original middleware/router for non-channel content.');
   }
 
   return function (req, res, next) {
@@ -69,8 +66,6 @@ function stack(original, hash) {
       .map(function (channel) {
         return hash[channel];
       });
-
-    channelContent.push(original);
 
     function load(i) {
       var n;

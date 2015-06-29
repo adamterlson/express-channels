@@ -1,7 +1,7 @@
 {
   "name": "express-channels",
-  "version": "0.0.1",
-  "description": "Application channels in a single build in via conventions and middleware",
+  "version": "0.5.1",
+  "description": "Application channels in a single build via middleware",
   "main": "index.js",
   "scripts": {
     "test": "make"

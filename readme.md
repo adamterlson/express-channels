@@ -31,6 +31,11 @@ var xc = expressChannels({
 
 app.use(xc);
 
+/* 3: Register channel-specific content (see below for usage details) */
+
+app.use(xc.stack(...));
+app.use(xc.router(...));
+
 ```
 
 
@@ -66,6 +71,11 @@ app.use(function (req, res, next) {
 
 app.use(xc);
 
+/* 4: Register channel-specific content (see below for usage details) */
+
+app.use(xc.stack(...));
+app.use(xc.router(...));
+
 ```
 
 ## API
@@ -76,9 +86,8 @@ Create a new expresschannels instance with the defined options for available cha
 
 ```javascript
 require('express-channels')({
-  channels: ['dev', 'beta'],
-  set: 'dev',
-  cascade: true
+  channels: ['alpha', 'beta'],
+  set: 'alpha'
 });
 ```
 
@@ -88,18 +97,14 @@ require('express-channels')({
 
 `set` (Required) - `String` OR `Function` - If a string is used, the given channel will be used for all requests (useful for environment-based channel-switching with no option to override).  If a function is used, that function will be called with the request object and should return the name of the channel to be used (or a promise which resolves to the same).
 
-`cascade` (Optional) - `Boolean` - Defaults to `true` - When enabled, channels which follow the set channel in the channels list will be used when the set channel is missing or does not serve a response.  When disabled, will prevent the system from ever serving channel content from another channel than the one currently set.
 
-For example a router or stack with A and C provided: if the set channel is B and cascade is false, no channel-specific content will be used.  If cascade is true, the user's preference is still B, but because B is not available, C (coming after B in the channel list) will be used instead. 
+### router(original, channelContent, options)
 
-
-### router(original, hash, options)
-
-Use ONE of the provided middleware/routers based upon channel preferences.
+Use ONE of the provided middleware/routers based upon channel preferences.  Helpful to fully replace the original middleware/router with channel content in a mututally-exclusive way.  That is, if the user is subscribed to channel-specific content, the original content will be unavailable.  This can be used, for example, to version a particular route.
 
 ```javascript
 app.use(xc.router(require('./user-router'), {
-  dev: require('./user-router.dev'),
+  alpha: require('./user-router.alpha'),
   beta: require('./user-router.beta')
 }));
 ```
@@ -108,20 +113,36 @@ app.use(xc.router(require('./user-router'), {
 
 The original non-channel-specific router/middleware to use if no channel-specific content is used.
 
-#### hash (required)
+#### channelContent (required)
 
-The hash provided maps between the channel name and the assigned router/middleware.
+The channel content hash where the keys are channel names and the values are anything that can be passed to express' `app.use` (e.g. middleware, routers).
 
-#### Options (optional)
+#### options (optional)
 
 `cascade` - `Boolean` - Defaults to `true` - When enabled, channels which follow the set channel in the channels list will be used when the set channel is missing or does not serve a response.  When disabled, will prevent the system from ever serving channel content from another channel than the one currently set.
 
 For example a router with A and C provided: if the set channel is B and cascade is false, no channel-specific content will be used.  If cascade is true, the user's preference is still B, but because B is not available, C (coming after B in the channel list) will be used instead. 
 
-### stack()
+### stack(channelConent)
 
-Use ANY of the provided middleware/routers in channel order, starting with set channel.
+Use ANY of the provided middleware/routers in channel order, starting with set channel and progressing down the list of configured channels.  This is particularly useful for serving static content resources, allowing for channel-specific content to be available, but original assets remain accessible.
 
+```javascript
+var xc = expressChannels({
+  channels: ['alpha', 'beta'], // List of channels available
+  set: 'alpha'
+});
+
+app.use(xc.stack({
+  alpha: express.static('./static/_alpha'), // Available only to alpha subscribers
+  beta: express.static('./static/_beta') // Available to alpha OR beta subscribers
+}));
+app.use(express.static('./static')); // Available to everyone
+```
+
+####channelContent
+
+The channel content hash where the keys are channel names and the values are anything that can be passed to express' `app.use` (e.g. middleware, routers).
 
 ## License
 
