@@ -65,6 +65,11 @@ function stack(hash) {
       return next(new Error('Must register the expressChannels middleware before using `stack`.'));
     }
 
+    // No channels or no channel content
+    if (!req._channels.length || !Object.keys(hash).length) {
+      return next();
+    }
+
     // Get the list of available channel content
     var channelContent = req._channels
       .map(function (channel) {
