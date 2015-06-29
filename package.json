@@ -12,7 +12,10 @@
   },
   "keywords": [
     "express",
-    "express-channels"
+    "express-channels",
+    "channels",
+    "branching",
+    "vesioning"
   ],
   "author": "Adam Terlson",
   "license": "MIT",
