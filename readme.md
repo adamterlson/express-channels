@@ -18,12 +18,12 @@ $ npm install express-channels
 var app = require('express'); 
 var expressChannels = require('express-channels');
 
-var environment = process.env.ENVIRONMENT; // 'dev', 'beta', or 'production'
+var environment = process.env.ENVIRONMENT; // 'alpha', 'beta', or 'production'
 
 /* Configure express-channels with all available channels and set the active one */
 
 var xc = expressChannels({
-  channels: ['dev', 'beta'], // List of channels available
+  channels: ['alpha', 'beta'], // List of channels available
   set: environment !== 'production' ? environment : null
 });
 
@@ -48,7 +48,7 @@ var expressChannels = require('express-channels');
 /* 1: Configure express-channels with all available channels and selection */
 
 var xc = expressChannels({
-  channels: ['dev', 'beta'], // List of channels available
+  channels: ['alpha', 'beta'], // List of channels available
   set: function (req) {
     var channelSelection;
 
@@ -64,7 +64,7 @@ var xc = expressChannels({
 /* 2: Load your user object with channel preferences using Passport, etc */
 
 app.use(function (req, res, next) {
-  req.user = { name: 'Sally', channel: 'dev' };
+  req.user = { name: 'Sally', channel: 'alpha' };
 });
 
 /* 3: Use the expressChannels middleware */
