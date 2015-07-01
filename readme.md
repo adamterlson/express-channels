@@ -6,7 +6,7 @@ Gives application release channel functionality, without a separate build.  Can 
 
 ## What good are application release channels?
 
-Release channels can be a powerful way to get your software in the hands of select users to collect early feedback, find bugs, etc before release to the general public.  Can be configured to serve a different channel based on different environments, automatically hiding in-progress features without having to hold off on code changes.
+Release channels can be a powerful way to get your software in the hands of select users to collect early feedback, find bugs, etc before release to the general public.  Can be configured to serve a different channel based on different environments, automatically hiding in-progress features in higher environments, or set the channel differently for every request allowing for per-user subscriptions.
 
 ## Install
 
